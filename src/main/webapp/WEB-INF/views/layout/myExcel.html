@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+</body>
+<script type="text/javascript">
+var dataArr = ["-1706.96 ","-1362.38 ","-999.22 ","-616.48 ","-213.10 ","212.03 ","660.10 ","1103.65 ","1546.71 ","2066.64 ","2614.63 ","3192.20 ","3800.96 "];
+var resultArr = [];
+convertResult(dataArr);
+
+
+function convertResult(dataArr){
+	if(dataArr != null && dataArr.length > 0){
+		var currFillIdx = getFirstFill(dataArr, 0); //当前待补亏的索引
+		var currFillAmt = parseFloat($.trim(dataArr[currFillIdx]));  //当前多余待补亏的金额
+		
+		$.each(dataArr, function(currIdx, item){
+			var currYearValue = parseFloat($.trim(item));
+			console.log(currIdx +"==="+ currYearValue +"==");
+			if(currFillIdx == -1){
+				resultArr[resultArr.length] = currYearValue.toFixed(2);;
+			}else{
+				if(currYearValue <= 0){
+					resultArr[resultArr.length] = "0.00";
+					
+					var intervalIdx = currIdx - currFillIdx;
+					if(intervalIdx <= 5){
+						
+					}else if(intervalIdx > 5){
+						currFillIdx = currIdx - 5;
+						currFillAmt = parseFloat($.trim(dataArr[currFillIdx]));
+					}
+				}else{
+					//当前年是在待补年份前后
+					if(currIdx < currFillIdx){
+						resultArr[resultArr.length] = currYearValue.toFixed(2);;
+					}else{
+						//五年内还是五年外
+						if(currIdx - currFillIdx <= 5){
+							
+						}else if(currIdx - currFillIdx > 5){
+							currFillIdx = currIdx - 5;
+							currFillAmt = parseFloat($.trim(dataArr[currFillIdx]));
+						}
+						var result = fillFollowYears(dataArr, currIdx, currYearValue, currFillIdx, currFillAmt);
+						currFillIdx = result[0];
+						currFillAmt = result[1];
+						resultArr[resultArr.length] = result[2].toFixed(2);;
+					}
+				}
+			}
+		});
+		console.log("resultArr===:"+ JSON.stringify(resultArr));
+	}
+}
+
+function getFirstFill(dataArr, index){
+	for(var i = 0; i < dataArr.length; i++){
+		var value = parseFloat($.trim(dataArr[i]));
+		if(i >= index && value < 0){
+			return i;
+			break;
+		}
+	}
+	return -1;
+}
+
+//原数组、当前年，当前年剩余金额、待补年索引、剩余待补金额
+function fillFollowYears(dataArr, currIdx, currValue, currFillIdx, currFillAmt){
+	var result = []; // 索引，剩余待补金额，结果
+	if(currValue + currFillAmt < 0){
+		result[0] = currFillIdx;
+		result[1] = currValue + currFillAmt;
+		result[2] = 0;
+		return result;
+	}else if(currValue + currFillAmt == 0){
+		currFillIdx = getFirstFill(dataArr, currFillIdx + 1);
+		result[0] = currFillIdx
+		result[1] = parseFloat($.trim(dataArr[currFillIdx]));
+		result[2] = 0;
+		return result;
+	}else if(currValue + currFillAmt > 0){
+		currValue = currValue + currFillAmt;
+		currFillIdx = currFillIdx + 1;
+		var checkResult = checkFollow(dataArr, currIdx, currFillIdx);
+		if(checkResult[2]){
+			currFillIdx = checkResult[0];
+			currFillAmt = checkResult[1];
+			return fillFollowYears(dataArr, currIdx, currValue, currFillIdx, currFillAmt)
+		}else{
+			currFillIdx = getFirstFill(dataArr, currIdx);
+			result[0] = currFillIdx
+			result[1] = parseFloat($.trim(dataArr[currFillIdx]));
+			result[2] = currValue;
+			return result;
+		}
+	}
+}
+
+function checkFollow(dataArr, currIdx, currFillIdx){
+	var checkResult = [0, 0, false];// 索引，剩余待补金额，结果true/false
+	for(var i = currFillIdx; i < currIdx; i++){
+		var value = parseFloat($.trim(dataArr[i]));
+		if(value < 0){
+			checkResult[0] = i
+			checkResult[1] = parseFloat($.trim(dataArr[i]));
+			checkResult[2] = true;
+			return checkResult;
+			break;
+		}
+	}
+	return checkResult;
+}
+
+</script>
+</html>

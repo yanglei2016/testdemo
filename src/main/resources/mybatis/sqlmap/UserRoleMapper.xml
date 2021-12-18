@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.testdemo.mybatis.mapper.UserRoleMapper" >
+  <resultMap id="BaseResultMap" type="com.example.testdemo.mybatis.entity.UserRole" >
+    <result column="user_id" property="userId" jdbcType="VARCHAR" />
+    <result column="role_id" property="roleId" jdbcType="INTEGER" />
+  </resultMap>
+  <insert id="insert" parameterType="com.example.testdemo.mybatis.entity.UserRole" >
+    insert into sys_user_role (user_id, role_id)
+    values (#{userId,jdbcType=VARCHAR}, #{roleId,jdbcType=INTEGER})
+  </insert>
+
+  <sql id="Base_Column_List" >
+    user_id, role_id
+  </sql>
+
+  <insert id="insertSelective" parameterType="com.example.testdemo.mybatis.entity.UserRole" >
+    insert into sys_user_role
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        user_id,
+      </if>
+      <if test="roleId != null" >
+        role_id,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="userId != null" >
+        #{userId,jdbcType=VARCHAR},
+      </if>
+      <if test="roleId != null" >
+        #{roleId,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+
+  <insert id="batchInsert" parameterType="com.example.testdemo.mybatis.entity.UserRole" >
+    insert into sys_user_role (
+    <include refid="Base_Column_List" />
+    )
+    values
+    <foreach collection="list" item="bean" open="" close="" separator=", ">
+      (
+      #{bean.userId,jdbcType=VARCHAR},
+      #{bean.roleId,jdbcType=INTEGER}
+      )
+    </foreach>
+  </insert>
+
+  <select id="selectUserRoleByUserId" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select
+    <include refid="Base_Column_List" />
+    from sys_user_role
+    where user_id = #{userId,jdbcType=VARCHAR}
+  </select>
+
+  <delete id="deleteUserRoleByUserId" parameterType="java.lang.String" >
+    delete from sys_user_role
+    where user_id = #{userId,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteUserRoleByRoleId" parameterType="java.lang.Integer" >
+    delete from sys_user_role
+    where role_id = #{roleId,jdbcType=INTEGER}
+  </delete>
+</mapper>

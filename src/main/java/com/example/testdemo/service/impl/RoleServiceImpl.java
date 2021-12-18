@@ -1,0 +1,113 @@
+package com.example.testdemo.service.impl;
+
+import com.example.testdemo.mybatis.entity.Role;
+import com.example.testdemo.mybatis.entity.RoleMenu;
+import com.example.testdemo.mybatis.mapper.RoleMapper;
+import com.example.testdemo.mybatis.mapper.RoleMenuMapper;
+import com.example.testdemo.mybatis.mapper.UserRoleMapper;
+import com.example.testdemo.service.RoleService;
+
+import com.example.testdemo.util.SysWebUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 
+ * @author yanglei
+ * 2017年6月29日 下午4:42:40
+ */
+@Service
+public class RoleServiceImpl implements RoleService {
+
+	@Autowired
+	private RoleMapper roleMapper;
+	@Autowired
+	private RoleMenuMapper roleMenuMapper;
+	@Autowired
+	private UserRoleMapper userRoleMapper;
+	@Autowired
+	private SysWebUtils sysWebUtils;
+	
+	@Override
+	public Role selectRoleById(Integer roleId) {
+		return roleMapper.selectByPrimaryKey(roleId);
+	}
+
+	@Transactional
+	@Override
+	public void insertRole(Role role, String menuIds) {
+		roleMapper.insert(role);
+		roleMenuMapper.deleteRoleMenuByRoleId(role.getRoleId());
+		
+		List<RoleMenu> roleMenuList = this.getRoleMenuList(role.getRoleId(), menuIds);
+		roleMenuMapper.batchInsert(roleMenuList);
+		
+		sysWebUtils.refreshAuth();
+	}
+
+	@Transactional
+	@Override
+	public void updateRole(Role role, String menuIds) {
+		roleMapper.updateByPrimaryKeySelective(role);
+		roleMenuMapper.deleteRoleMenuByRoleId(role.getRoleId());
+		
+		List<RoleMenu> roleMenuList = this.getRoleMenuList(role.getRoleId(), menuIds);
+		roleMenuMapper.batchInsert(roleMenuList);
+		
+		sysWebUtils.refreshAuth();
+	}
+	
+	@Transactional
+	@Override
+	public void deleteRole(Integer roleId) {
+		roleMapper.deleteByPrimaryKey(roleId);
+		roleMenuMapper.deleteRoleMenuByRoleId(roleId);
+		userRoleMapper.deleteUserRoleByRoleId(roleId);
+		
+		sysWebUtils.refreshAuth();
+	}
+
+	@Override
+	public List<Role> selectRoleList(Map<String, Object> map) {
+		return roleMapper.selectRoleList(map);
+	}
+
+	@Override
+	public Map<String, Object> getRoleMenuRef(Integer roleId) {
+		Map<String, Object> refMap = null;
+		List<RoleMenu> roleMenuList = roleMenuMapper.selectListByRoleId(roleId);
+		if(roleMenuList != null && roleMenuList.size() > 0){
+			refMap = new HashMap<String, Object>();
+			String menuIds = "";
+			for(RoleMenu roleMenu : roleMenuList){
+				menuIds += "," + roleMenu.getMenuId();
+			}
+			refMap.put("menuIds", menuIds.substring(1));
+		}
+		return refMap;
+	}
+	
+	private List<RoleMenu> getRoleMenuList(Integer roleId, String menuIds){
+		List<RoleMenu> roleMenuList = null;
+		if(StringUtils.isNotEmpty(menuIds)){
+			roleMenuList = new ArrayList<RoleMenu>();
+			String[] menuIdArray = menuIds.split(",");
+			RoleMenu roleMenu = null;
+			for(int i = 0, size = menuIdArray.length; i < size; i++){
+				roleMenu = new RoleMenu();
+				roleMenu.setRoleId(roleId);
+				roleMenu.setMenuId(menuIdArray[i]);
+				roleMenuList.add(roleMenu);
+			}
+		}
+		return roleMenuList;
+	}
+	
+}
